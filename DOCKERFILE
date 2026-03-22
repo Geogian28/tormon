@@ -1,0 +1,4 @@
+FROM gcr.io/distroless/static-debian12
+COPY tormon /tormon
+# # Set the command to run the binary in agent mode
+ENTRYPOINT ["/tormon"]

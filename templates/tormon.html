@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{{template "head" .}}
+
+<body>
+    <div class="container">
+
+        <nav class="top-navbar">
+            <a href="/" class="brand-logo">
+                <span style="font-size: 1.25rem;">🛠️</span> Tormon
+            </a>
+            <div
+                style="color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; font-weight: bold; letter-spacing: 0.1em;">
+                Active Queue
+            </div>
+        </nav>
+
+        <div class="sidebar-panel" style="padding: 0; overflow: hidden;">
+            <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                <thead style="background-color: var(--bg-input); border-bottom: 1px solid var(--border-std);">
+                    <tr>
+                        <th
+                            style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">
+                            Ticket ID</th>
+                        <th
+                            style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">
+                            Status</th>
+                        <th
+                            style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">
+                            Machine</th>
+                        <th
+                            style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">
+                            Failing Package</th>
+                        <th
+                            style="padding: 1rem 1.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">
+                            Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .}}
+                    <tr style="border-bottom: 1px solid var(--border-faint); cursor: pointer; transition: background-color 0.2s;"
+                        onmouseover="this.style.backgroundColor='var(--bg-input)'"
+                        onmouseout="this.style.backgroundColor='transparent'" onclick="window.location.href='/{{.ID}}'">
+
+                        <td style="padding: 1rem 1.5rem; font-weight: bold; color: var(--text-accent);">{{.DisplayID}}
+                        </td>
+
+                        <td style="padding: 1rem 1.5rem;">
+                            <span class="status-badge-inline" style="display: inline-block;">{{.Status}}</span>
+                        </td>
+
+                        <td style="padding: 1rem 1.5rem;">{{.MachineName}}</td>
+
+                        <td style="padding: 1rem 1.5rem;">
+                            <code
+                                style="color: var(--error-text); background-color: var(--error-bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">{{.PackageName}}</code>
+                        </td>
+
+                        <td style="padding: 1rem 1.5rem; color: var(--text-muted); font-size: 0.875rem;">{{.CreatedAt}}
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+
+</html>

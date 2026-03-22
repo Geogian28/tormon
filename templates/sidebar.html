@@ -1,0 +1,108 @@
+{{define "sidebar"}}
+<aside class="sidebar-col">
+    <div class="sidebar-panel">
+
+        <div class="mb-8" style="margin-bottom: 2rem;">
+            <h3 class="section-label">Current State</h3>
+            <div class="select-wrapper">
+                <select class="input-box select-status" onchange="updateStatus(parseInt('{{.Ticket.ID}}'), this.value)">
+                    <option value="open" {{if eq .Ticket.Status "open" }}selected{{end}}>Open</option>
+                    <option value="pending" {{if eq .Ticket.Status "pending" }}selected{{end}}>Pending Automation
+                    </option>
+                    <option value="closed" {{if eq .Ticket.Status "closed" }}selected{{end}}>Closed</option>
+                </select>
+                <svg class="select-icon" viewBox="0 0 20 20">
+                    <path
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+            </div>
+        </div>
+
+        <h3 class="section-label">
+            Affected Hosts (<span style="color: var(--text-accent)">{{len .AffectedHosts}}</span>)
+        </h3>
+
+        <div class="host-list">
+            {{range .AffectedHosts}}
+            <div class="host-item">
+                <div class="host-dot"></div>
+                <span style="font-family: 'Roboto Mono', monospace;">{{.}}</span>
+            </div>
+            {{end}}
+        </div>
+        <h3 class="section-label" style="margin-top: 2rem;">
+            Still Affected (<span id="still-affected-count" style="color: var(--error-text)">{{len
+                .StillAffected}}</span>)
+        </h3>
+
+        <div class="host-list" id="still-affected-list">
+            {{range .StillAffected}}
+            <div class="host-item">
+                <div class="host-dot"></div>
+                <span style="font-family: 'Roboto Mono', monospace;">{{.}}</span>
+            </div>
+            {{end}}
+        </div>
+        <button class="btn-primary btn-full" onclick="updateStatus(parseInt('{{.Ticket.ID}}'), 'pending')">Retry
+            Deployment</button>
+
+    </div>
+</aside>
+
+<script>
+    function updateStatus(ticketId, newStatus) {
+        // Prevent spam! Exit early if we are already in this state
+        const statusDropdown = document.querySelector('.select-status');
+        if (statusDropdown && statusDropdown.value === newStatus) {
+            return;
+        }
+
+        fetch('/api/ticket/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                ticket_id: ticketId,
+                status: newStatus
+            })
+        }).then(response => {
+            if (!response.ok) {
+                alert("Failed to update ticket status in the database!");
+                return;
+            }
+
+            // Instantly update the dropdown
+            if (statusDropdown) {
+                statusDropdown.value = newStatus;
+            }
+
+            // Dynamically inject the new timeline event
+            const timeline = document.querySelector('.timeline-container');
+            if (timeline) {
+                const newEventHtml = `
+            <div class="event-status" style="animation: slideIn 0.3s ease-out forwards; opacity: 0; transform: translateY(10px);">
+                <div class="icon-status"></div>
+                <div class="status-text">
+                    <span style="font-weight: bold; color: var(--text-main);">sam</span> 
+                    changed status to 
+                    <span class="status-badge-inline">${newStatus}</span>
+                    <span class="msg-time" style="margin-left: 0.25rem;">Just now</span>
+                </div>
+            </div>
+            `;
+                timeline.insertAdjacentHTML('beforeend', newEventHtml);
+
+                // NEW: Tell the background polling loop to skip this event so it doesn't double-post!
+                if (typeof currentEventCount !== 'undefined') {
+                    currentEventCount++;
+                }
+            }
+        }).catch(error => {
+            console.error("Error:", error);
+            alert("Network error updating status.");
+        });
+    }
+</script>
+
+{{end}}

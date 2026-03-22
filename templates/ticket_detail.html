@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{{template "head" .}}
+
+<body>
+    <div class="container">
+
+        <nav class="top-navbar">
+            <a href="/" class="brand-logo">
+                <span style="font-size: 1.25rem;">🛠️</span> Tormon
+            </a>
+            <a href="/" class="btn-back">
+                ← Back to Queue
+            </a>
+        </nav>
+
+        <header class="page-header" style="padding-top: 0;">
+            <div class="title-row">
+                <h1 class="ticket-title">{{.Ticket.MachineName}}</h1>
+                <span class="title-slash">/</span>
+                <code class="ticket-package">{{.Ticket.PackageName}}</code>
+            </div>
+            <div
+                style="margin-top: 0.5rem; color: var(--text-muted); font-size: 0.875rem; font-family: 'Roboto Mono', monospace;">
+                Ticket {{.Ticket.DisplayID}}
+            </div>
+            <div class="header-divider"></div>
+        </header>
+
+        <div class="grid-layout">
+
+            <main class="main-col">
+                <section>
+                    <div class="timeline-container">
+                        <div class="timeline-trunk"></div>
+
+                        {{range $index, $event := .Events}}
+
+                        {{if eq $index 0}}
+                        <div class="event-root">
+                            <div class="event-root-mask">
+                                <div class="event-root-box">
+                                    <div class="icon-root">
+                                        {{if eq .AuthorType "system"}}🤖{{else}}{{printf "%.1s" .AuthorName}}{{end}}
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div class="msg-header">
+                                            <span class="msg-author">{{.AuthorName}} <span
+                                                    class="msg-type">({{.AuthorType}})</span></span>
+                                            <span class="msg-time">{{.CreatedAt}}</span>
+                                        </div>
+                                        <p class="msg-body">{{.Message}}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{else if eq .AuthorType "status_change"}}
+                        <div class="event-status">
+                            <div class="icon-status"></div>
+                            <div class="status-text">
+                                <span style="font-weight: bold; color: var(--text-main);">{{.AuthorName}}</span>
+                                changed status to
+                                <span class="status-badge-inline">{{.Message}}</span>
+                                <span class="msg-time" style="margin-left: 0.25rem;">{{.CreatedAt}}</span>
+                            </div>
+                        </div>
+
+                        {{else}}
+                        <div class="event-reply">
+                            <div class="icon-reply">
+                                {{if eq .AuthorType "system"}}🤖{{else}}{{printf "%.1s" .AuthorName}}{{end}}
+                            </div>
+                            <div class="event-reply-box">
+                                <div class="reply-connector"></div>
+                                <div class="msg-header">
+                                    <span class="msg-author">{{.AuthorName}} <span
+                                            class="msg-type">({{.AuthorType}})</span></span>
+                                    <span class="msg-time">{{.CreatedAt}}</span>
+                                </div>
+                                <p class="msg-body">{{.Message}}</p>
+                            </div>
+                        </div>
+                        {{end}}
+
+                        {{end}}
+
+                    </div>
+                </section>
+
+                <form id="update-form" action="/update" method="POST" class="update-form">
+                    <input type="hidden" name="ticket_id" value="{{.Ticket.ID}}">
+                    <h3>Update Ticket</h3>
+                    <textarea name="message" required class="input-box"
+                        placeholder="Leave a troubleshooting note or update..."></textarea>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Post Update</button>
+                    </div>
+                </form>
+            </main>
+
+            {{template "sidebar" .}}
+
+        </div>
+    </div>
+    <script>
+        let currentEventCount = parseInt('{{len .Events}}');
+        const currentTicketId = parseInt('{{.Ticket.ID}}');
+
+        setInterval(() => {
+            fetch(`/api/ticket/poll?id=${currentTicketId}&offset=${currentEventCount}`)
+                .then(res => res.json())
+                .then(data => {
+                    // 1. Inject New Comments dynamically
+                    if (data.new_events && data.new_events.length > 0) {
+                        const timeline = document.querySelector('.timeline-container');
+
+                        data.new_events.forEach(event => {
+                            let newHtml = "";
+
+                            if (event.AuthorType === "status_change") {
+                                newHtml = `
+                                <div class="event-status" style="animation: slideIn 0.3s ease-out forwards; opacity: 0; transform: translateY(10px);">
+                                    <div class="icon-status"></div>
+                                    <div class="status-text">
+                                        <span style="font-weight: bold; color: var(--text-main);">${event.AuthorName}</span> 
+                                        changed status to 
+                                        <span class="status-badge-inline">${event.Message}</span>
+                                        <span class="msg-time" style="margin-left: 0.25rem;">${event.CreatedAt}</span>
+                                    </div>
+                                </div>`;
+                                // Auto-update dropdown if status changed in background!
+                                const dropdown = document.querySelector('.select-status');
+                                if (dropdown) dropdown.value = event.Message;
+                            } else {
+                                let icon = event.AuthorType === "system" ? "🤖" : event.AuthorName.charAt(0);
+                                newHtml = `
+                                <div class="event-reply" style="animation: slideIn 0.3s ease-out forwards; opacity: 0; transform: translateY(10px);">
+                                    <div class="icon-reply">${icon}</div>
+                                    <div class="event-reply-box">
+                                        <div class="reply-connector"></div>
+                                        <div class="msg-header">
+                                            <span class="msg-author" style="color: var(--text-accent);">${event.AuthorName} <span class="msg-type">(${event.AuthorType})</span></span>
+                                            <span class="msg-time" style="color: var(--text-muted);">${event.CreatedAt}</span>
+                                        </div>
+                                        <p class="msg-body" style="color: #cac4d0;">${event.Message}</p>
+                                    </div>
+                                </div>`;
+                            }
+
+                            timeline.insertAdjacentHTML('beforeend', newHtml);
+                            currentEventCount++;
+                        });
+                    }
+
+                    // 2. Auto-Update "Still Affected" Sidebar List
+                    if (data.still_affected) {
+                        document.getElementById('still-affected-count').innerText = data.still_affected.length;
+                        const list = document.getElementById('still-affected-list');
+                        list.innerHTML = '';
+                        data.still_affected.forEach(host => {
+                            list.innerHTML += `
+                            <div class="host-item">
+                                <div class="host-dot"></div>
+                                <span style="font-family: 'Roboto Mono', monospace;">${host}</span>
+                            </div>`;
+                        });
+                    }
+                })
+                .catch(err => console.error("Polling error:", err));
+        }, 5000); // Check every 5 seconds
+    </script>
+</body>
+
+</html>
+
+curl -X POST http://tormon-dev.brohome.net/api/report \
+-H "Content-Type: application/json" \
+-d '{
+"hostname": "node-04.brohome.net",
+"package_name": "YOUR_PACKAGE_NAME",
+"message": "Connection refused on port 443"
+}'
