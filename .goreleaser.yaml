@@ -12,13 +12,13 @@ project_name: tormon
 
 before:
   hooks:
-    # You may remove this if you don't use go modules.
-    - go mod tidy
-    # you may remove this if you don't need go generate
-    - go generate ./...
+    - go -C src mod tidy
+    - go -C src generate ./...
 
 builds:
   - id: tormon
+    dir: src
+    main: .
     binary: tormon
     env:
       - CGO_ENABLED=0
