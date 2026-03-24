@@ -3,18 +3,11 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
-	"os"
 	"strings"
-
-	_ "modernc.org/sqlite"
 )
-
-// --- Data Structures ---
 
 type TicketQueueItem struct {
 	ID          int
@@ -45,30 +38,7 @@ type FailureReport struct {
 	Message     string `json:"message"`
 }
 
-var serverName = "https://tormon.brohome.net"
-
-func main() {
-	var testMode bool
-	flag.BoolVar(&testMode, "dev", false, "Run in development mode")
-	flag.Parse()
-	if testMode {
-		serverName = "http://tormon-dev.brohome.net"
-		fmt.Println("Running in dev mode (https://tormon-dev.brohome.net)")
-	}
-
-	dbPath := os.Getenv("DB_PATH")
-	if dbPath == "" {
-		dbPath = "./tormon.db"
-	}
-
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	// NOTICE: We removed the tmplQueue and tmplDetail from up here!
-
+func setupSites(db *sql.DB) error {
 	// --- THE SINGLE UNIFIED ROUTE ---
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
@@ -472,7 +442,5 @@ func main() {
 			db.Exec("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", ticketID)
 		}
 	})
-
-	fmt.Println("Tormon running on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	return nil
 }
