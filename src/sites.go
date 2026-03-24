@@ -54,8 +54,8 @@ func setupSites(db *sql.DB) error {
 
 			rows, err := db.Query(`
 				SELECT 
-					t.id, '#ASM-' || printf('%04d', t.id), t.status, 
-					m.hostname, p.name, time(t.created_at)
+					t.id, CONCAT('#ASM-', LPAD(t.id, 4, '0')), t.status, 
+					m.hostname, p.name, TIME(t.created_at)
 				FROM tickets t
 				JOIN machines m ON t.machine_id = m.id
 				JOIN packages p ON t.package_id = p.id
@@ -96,7 +96,7 @@ func setupSites(db *sql.DB) error {
 
 		err = db.QueryRow(`
 			SELECT 
-				t.id, '#ASM-' || printf('%04d', t.id), t.status, 
+				t.id, CONCAT('#ASM-', LPAD(t.id, 4, '0')), t.status, 
 				m.hostname, m.vmid, p.name
 			FROM tickets t
 			JOIN machines m ON t.machine_id = m.id
