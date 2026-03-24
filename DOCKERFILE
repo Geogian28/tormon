@@ -1,4 +1,4 @@
 FROM debian:12-slim
 COPY tormon /tormon
-COPY *.html /templates/
+COPY src/templates /templates
 ENTRYPOINT ["/tormon"]
