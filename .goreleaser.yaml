@@ -39,6 +39,8 @@ dockers:
       - "geogian/tormon:{{ .Version }}"
       - "geogian/tormon:{{ .Major }}"
     dockerfile: DOCKERFILE
+    extra_files:
+      - templates/
 
 archives:
   - formats: [tar.gz]

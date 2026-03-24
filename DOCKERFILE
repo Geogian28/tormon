@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/static-debian12
+FROM debian:12-slim
 COPY tormon /tormon
-# # Set the command to run the binary in agent mode
+COPY templates /templates
 ENTRYPOINT ["/tormon"]
